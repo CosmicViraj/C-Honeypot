@@ -20,3 +20,8 @@ This project is a basic **honeypot** implemented in C. Its purpose is to act as 
 Compile the code using:  
 ```bash
 gcc -o honeypot honeypot.c
+
+
+EXECUTION :
+
+![Screenshot] (https://github.com/CosmicViraj/C-Honeypot/blob/main/.RUN/Screenshot%202024-11-27%20181616.png)
