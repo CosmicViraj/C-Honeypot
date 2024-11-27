@@ -23,5 +23,5 @@ gcc -o honeypot honeypot.c
 
 
 EXECUTION :
+![Screenshot](https://github.com/CosmicViraj/C-Honeypot/blob/main/.RUN/Screenshot%202024-11-27%20181616.png)
 
-![Screenshot] (https://github.com/CosmicViraj/C-Honeypot/blob/main/.RUN/Screenshot%202024-11-27%20181616.png)
