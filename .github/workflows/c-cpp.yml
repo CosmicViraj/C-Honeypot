@@ -10,52 +10,70 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest  # Use Ubuntu for the CI environment
+    runs-on: ${{ matrix.os }}  # Use matrix to run on both Windows and Linux
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]  # Run on both Ubuntu (Linux) and Windows
 
     steps:
       # Step 1: Checkout the repository code
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # Step 2: Set up the environment (installing necessary tools)
-      - name: Set up GCC
-        run: sudo apt-get update && sudo apt-get install -y gcc make
+      # Step 2: Set up tools depending on the OS (GCC for Linux, MinGW for Windows)
+      - name: Set up build tools
+        run: |
+          if [ $RUNNER_OS == 'Linux' ]; then
+            sudo apt-get update && sudo apt-get install -y gcc make  # Install tools for Linux
+          elif [ $RUNNER_OS == 'Windows' ]; then
+            choco install mingw  # Install MinGW for compiling C code on Windows
+          fi
 
-      # Step 3: Compile the C honeypot code
+      # Step 3: Compile the C honeypot code depending on the OS
       - name: Compile C honeypot
         run: |
-          gcc -o honeypot honeypot.c
+          if [ $RUNNER_OS == 'Linux' ]; then
+            cd .SOURCE  # Navigate to the .SOURCE folder
+            gcc -o ../.RUN/honeypot honeypot.c  # Compile and output to .RUN folder (Linux)
+          elif [ $RUNNER_OS == 'Windows' ]; then
+            cd .SOURCE  # Navigate to the .SOURCE folder
+            mingw32-gcc -o ../.RUN/honeypot.exe honeypot.c  # Compile and output to .RUN folder (Windows)
+          fi
 
-      # Step 4: Run tests (if any)
-      - name: Run tests (optional)
+      # Step 4: Run the compiled honeypot (for testing in CI)
+      - name: Run the compiled honeypot
         run: |
-          # Example: if you have test files, run them
-          # ./test_suite.sh
-          echo "No tests for now"
+          if [ $RUNNER_OS == 'Linux' ]; then
+            cd .RUN  # Navigate to the .RUN folder
+            chmod +x honeypot  # Make the binary executable
+            ./honeypot  # Run the Linux executable
+          elif [ $RUNNER_OS == 'Windows' ]; then
+            cd .RUN  # Navigate to the .RUN folder
+            .\honeypot.exe  # Run the Windows executable
+          fi
+        continue-on-error: true  # Continue even if the honeypot fails to run (useful for background processes)
 
-      # Step 5: Deploy or run the compiled code (optional)
-      - name: Run the honeypot (for testing in CI)
+      # Step 5: Log the output (optional)
+      - name: Display running honeypot process
         run: |
-          nohup ./honeypot &  # Run the honeypot in the background
-        continue-on-error: true  # Allow the process to continue even if the honeypot fails
+          if [ $RUNNER_OS == 'Linux' ]; then
+            ps aux | grep honeypot  # Show the running honeypot process on Linux
+          elif [ $RUNNER_OS == 'Windows' ]; then
+            tasklist | findstr honeypot  # Show the running honeypot process on Windows
+          fi
 
-      # Step 6: Log the output (optional)
-      - name: Display honeypot output
-        run: |
-          ps aux | grep honeypot  # Show the running honeypot process
-
-  # Optionally, you could have a deployment job that uploads to a server.
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # Use Ubuntu to deploy the honeypot
     needs: build
     steps:
       # Step 1: Checkout code
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # Step 2: Deploy the honeypot to a server (example)
+      # Step 2: Deploy the compiled honeypot to a remote server (example)
       - name: Deploy to remote server
         run: |
-          scp honeypot user@remote-server:/path/to/deploy/
-          ssh user@remote-server "nohup /path/to/deploy/honeypot &"
-
+          cd .RUN  # Navigate to the .RUN folder
+          scp honeypot.exe user@remote-server:/path/to/deploy/  # Copy to server (Windows .exe file)
+          ssh user@remote-server "nohup /path/to/deploy/honeypot.exe &"  # Run in the background on server
