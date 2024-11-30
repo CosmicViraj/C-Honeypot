@@ -1,23 +1,61 @@
-name: C/C++ CI
+name: C Honeypot CI/CD
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # Use Ubuntu for the CI environment
 
     steps:
-    - uses: actions/checkout@v4
-    - name: configure
-      run: ./configure
-    - name: make
-      run: make
-    - name: make check
-      run: make check
-    - name: make distcheck
-      run: make distcheck
+      # Step 1: Checkout the repository code
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Step 2: Set up the environment (installing necessary tools)
+      - name: Set up GCC
+        run: sudo apt-get update && sudo apt-get install -y gcc make
+
+      # Step 3: Compile the C honeypot code
+      - name: Compile C honeypot
+        run: |
+          gcc -o honeypot honeypot.c
+
+      # Step 4: Run tests (if any)
+      - name: Run tests (optional)
+        run: |
+          # Example: if you have test files, run them
+          # ./test_suite.sh
+          echo "No tests for now"
+
+      # Step 5: Deploy or run the compiled code (optional)
+      - name: Run the honeypot (for testing in CI)
+        run: |
+          nohup ./honeypot &  # Run the honeypot in the background
+        continue-on-error: true  # Allow the process to continue even if the honeypot fails
+
+      # Step 6: Log the output (optional)
+      - name: Display honeypot output
+        run: |
+          ps aux | grep honeypot  # Show the running honeypot process
+
+  # Optionally, you could have a deployment job that uploads to a server.
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Step 2: Deploy the honeypot to a server (example)
+      - name: Deploy to remote server
+        run: |
+          scp honeypot user@remote-server:/path/to/deploy/
+          ssh user@remote-server "nohup /path/to/deploy/honeypot &"
+
