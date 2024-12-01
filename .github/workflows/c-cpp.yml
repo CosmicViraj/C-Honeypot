@@ -21,7 +21,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # Step 2: Set up build tools depending on the OS
+      # Step 2: Debug directory structure (optional for troubleshooting)
+      - name: Debug directory structure
+        run: ls -R
+
+      # Step 3: Set up build tools depending on the OS
       - name: Set up build tools
         run: |
           if [[ $RUNNER_OS == "Linux" ]]; then
@@ -30,7 +34,7 @@ jobs:
             choco install mingw
           fi
 
-      # Step 3: Compile the C honeypot code
+      # Step 4: Compile the C honeypot code
       - name: Compile C honeypot
         run: |
           if [[ $RUNNER_OS == "Linux" ]]; then
@@ -41,7 +45,7 @@ jobs:
             mingw32-gcc -o ../.RUN/honeypot.exe HONEYPOT.c
           fi
 
-      # Step 4: Run the compiled honeypot for testing
+      # Step 5: Run the compiled honeypot for testing
       - name: Run the compiled honeypot
         run: |
           if [[ $RUNNER_OS == "Linux" ]]; then
@@ -54,7 +58,7 @@ jobs:
           fi
         continue-on-error: true
 
-      # Step 5: Display running honeypot process
+      # Step 6: Display running honeypot process
       - name: Display running honeypot process
         run: |
           if [[ $RUNNER_OS == "Linux" ]]; then
